@@ -1,0 +1,16 @@
+[Unit]
+Description=Ekran Boshqarish Telegram Boti
+After=network.target
+
+[Service]
+Type=simple
+User=zoltanma
+WorkingDirectory=/home/zoltanma/screen-bot
+ExecStart=/home/zoltanma/screen-bot/venv/bin/python3 /home/zoltanma/screen-bot/bot.py
+Restart=always
+RestartSec=10
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/zoltanma/.Xauthority
+
+[Install]
+WantedBy=multi-user.target
