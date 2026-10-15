@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import time
+import getpass
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
@@ -16,9 +17,13 @@ from telegram.ext import (
 )
 
 # --- SOZLAMALAR ---
-BOT_TOKEN = "8809139953:AAFjU58z6PLWg4OLnzc0uEGQ_-kr45iKkG4"
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8809139953:AAFjU58z6PLWg4OLnzc0uEGQ_-kr45iKkG4")
 SCRIPT_PATH = os.path.join(os.path.dirname(__file__), "screen_control.sh")
-OWNER_ID = 5580566610  # Faqat shu Telegram ID boshqara oladi
+OWNER_IDS = {
+    int(x.strip())
+    for x in os.getenv("OWNER_IDS", "5580566610,7993413019,6449488329,8303597243").split(",")
+    if x.strip().isdigit()
+}
 
 # ConversationHandler holati
 WAITING_CUSTOM_TIME = 1
@@ -47,7 +52,7 @@ def parse_time_value(val):
 def owner_only(func):
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
-        if user_id != OWNER_ID:
+        if user_id not in OWNER_IDS:
             username = update.effective_user.username or "noma'lum"
             logger.warning(f"⛔ Ruxsatsiz kirish - ID: {user_id}, @{username}")
             if update.message:
@@ -63,7 +68,14 @@ def owner_only(func):
 # --- BUYRUQ ISHGA TUSHIRISH ---
 def run_cmd(command, shell=False):
     try:
-        env = {**os.environ, "DISPLAY": ":0", "XAUTHORITY": f"/home/{os.getlogin()}/.Xauthority"}
+        user = os.environ.get("USER") or getpass.getuser()
+        xauth = os.environ.get("XAUTHORITY") or f"/home/{user}/.Xauthority"
+        env = {
+            **os.environ,
+            "DISPLAY": os.environ.get("DISPLAY", ":0"),
+            "XAUTHORITY": xauth,
+            "WAYLAND_DISPLAY": os.environ.get("WAYLAND_DISPLAY", "wayland-0"),
+        }
         if shell:
             result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10, env=env)
         else:
